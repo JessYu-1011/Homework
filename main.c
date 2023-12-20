@@ -5,14 +5,14 @@
 
 int main(int argc, char *argv[]){
     void (*f[3])(int, char[], Prefix *[]) = {prefix_insert,deleted_prefixes,search};
-    char file[4][40] = {"./inserted_prefixes.txt","./inserted_prefixes.txt","./deleted_prefixes.txt", "./routing_table.txt"};
+    char file[4][40] = {"./routing_table.txt", "./inserted_prefixes.txt","./inserted_prefixes.txt","./deleted_prefixes.txt"};
     int d;
     char buf[20];
     // Input d
     if(argc > 1){
-        if(argc != 5) exit(0);
-        d = atoi(argv[4]);
-        for(int i = 0; i < 3; i++) strcpy(file[i], argv[i+1]);
+        if(argc != 6) exit(0);
+        d = atoi(argv[5]);
+        for(int i = 0; i < 4; i++) strcpy(file[i], argv[i+1]);
     } else scanf("%d", &d);
     // dis[1<<d] for special group
     Prefix **dis = (Prefix **)malloc(sizeof(Prefix*)*(1<<d+1));
@@ -20,7 +20,7 @@ int main(int argc, char *argv[]){
         dis[i] = (Prefix *)malloc(sizeof(Prefix));
         dis[i] = NULL;
     }
-    FILE *fp = fopen(file[3], "r");
+    FILE *fp = fopen(file[0], "r");
     while(fgets(buf, 20, fp) != NULL) input(buf);
     fclose(fp);
     // Total Prefixes
@@ -60,7 +60,7 @@ int main(int argc, char *argv[]){
     }
     printf("-----------------------------\n");
     for(int i = 0 ; i < 3; i ++){
-        FILE *fp = fopen(file[i], "r");
+        FILE *fp = fopen(file[i+1], "r");
         while(fgets(buf, 20, fp) != NULL)f[i](d, buf, dis);
         fclose(fp);
     }
