@@ -96,6 +96,7 @@ void deleted_prefixes(int d, char buf[20], Prefix *dis[]){
         if(cur == NULL) break;
         next = cur->next;
     }
+
     free(next);
 } 
 
@@ -105,14 +106,19 @@ void search(int d, char buf[20], Prefix *dis[]){
     new->ip = 0;
     sscanf(buf, "%d.%d.%d.%d", &ips[0], &ips[1], &ips[2], &ips[3]);
     for(int i = 0 ; i < 4; i++) new->ip |= (ips[i] << 8*(3-i));
+    int times = 0;
     for(int i = 0 ; i < (1<<d)+1; i++){
         cur = dis[i];
         while(cur != NULL){
-            if(new->ip == cur->ip){printf("successful\n"); break;}
-            else printf("failed\n");
+            if(new->ip == cur->ip){
+                times++; 
+                break;
+            }
             cur = cur->next;
         }
+        if(times) break;
     }
-    free(cur);
+    if(times) printf("successful\n");
+    else {printf("failed\n"); free(cur);}
     free(new);
 }
