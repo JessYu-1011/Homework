@@ -31,7 +31,7 @@ int main(int argc, char *argv[]){
         total_prefixes++;
         cur = cur->next;
     }
-    printf("The total number of prefixes in the input file is : %d.", total_prefixes);
+    printf("The total number of prefixes in the input file is : %d.\n", total_prefixes);
     free(cur);
     length_distribution();
     segment(d, dis);
@@ -44,12 +44,11 @@ int main(int argc, char *argv[]){
         int times = 0;
         while(cur_head != NULL) {
             times++;
-            printf(" ---> | %d.%d.%d.%d |  ---> ", cur_head->ip>>24&0xff, 
+            printf(" ---> | %d.%d.%d.%d |", cur_head->ip>>24&0xff, 
                     cur_head->ip>>16&0xff, cur_head->ip>>8&0xff, cur_head->ip&0xff);
             cur_head = cur_head ->next;
         }
-        if(times) printf(" NULL\n");
-        else printf("\n");
+        printf("\n");
     }
     // special group
     Prefix *cur_head = dis[(1<<d)];
