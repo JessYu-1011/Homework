@@ -20,7 +20,7 @@ Prefix *insert(Prefix *cur_head, Prefix *new_node);
 
 int main(int argc, char *argv[]){
     void (*f[3])(int, char[], Prefix *[]) = {prefix_insert,deleted_prefixes,search};
-    char file[3][40] = {"./inserted_prefixes.txt","./deleted_prefixes.txt","trace_file.txt"};
+    char file[3][40] = {"./inserted_prefixes.txt","./deleted_prefixes.txt","./trace_file.txt"};
     char rt[50] = "./routing_table.txt";
     int d;
     char buf[20];
@@ -29,10 +29,12 @@ int main(int argc, char *argv[]){
         if(argc != 6) exit(0);
         d = atoi(argv[5]);
         strcpy(rt, argv[1]);
-        for(int i = 1; i < 4; i++) strcpy(file[i], argv[i+1]);
+        strcpy(file[0],argv[2]);
+        strcpy(file[1],argv[3]);
+        strcpy(file[2],argv[4]);
     } else scanf("%d", &d);
     // 1<<d+for special group
-    Prefix **dis = (Prefix **)malloc(sizeof(Prefix*)*((1<<d)+2));
+    Prefix **dis = (Prefix **)calloc((1<<d)+2, sizeof(Prefix*));
     for(int i = 0 ; i < (1<<d)+1 ; i++) {
         dis[i] = (Prefix *)malloc(sizeof(Prefix));
         dis[i] = NULL;
@@ -54,16 +56,24 @@ int main(int argc, char *argv[]){
     segment(d, dis);
     // Print every linked list for normal group
     for(int i = 0 ; i < (1<<d) ; i++){
-        Prefix *cur_head = dis[i];
+        Prefix *cur_head = dis[i], *pre = NULL;
         printf("| ");
         for(int j = 0 ; j < d ; j++) printf("%d", i>>(7-j)&1);
         printf(" |");
         int times = 0;
         while(cur_head != NULL) {
-            times++;
-            printf(" ---> | %d.%d.%d.%d |", cur_head->ip>>24&0xff, 
+            if(times != 0){
+                if(cur_head->ip != pre->ip ){
+                    printf(" ---> | %d.%d.%d.%d |", cur_head->ip>>24&0xff, 
                     cur_head->ip>>16&0xff, cur_head->ip>>8&0xff, cur_head->ip&0xff);
+                }
+            } else if (times == 0) {
+                printf(" ---> | %d.%d.%d.%d |", cur_head->ip>>24&0xff, 
+                    cur_head->ip>>16&0xff, cur_head->ip>>8&0xff, cur_head->ip&0xff);
+            }
+            pre = cur_head;
             cur_head = cur_head ->next;
+            times++;
         }
         printf("\n");
     }
@@ -116,19 +126,20 @@ void length_distribution(){
         cur = cur->next;
     }
     for(int i = 0; i < 33 ; i++) printf("The number of prefixes with prefix length %d = %d.\n", i, length_dis[i]);
-    free(cur);
 }
 
 void input(char buf[20]){
+    if(strcmp(buf, "\n") == 0) return;
     // Store the int ip in a array
     int ips[4];
+    unsigned int ip = 0;
     Prefix *new = (Prefix *)malloc(sizeof(Prefix));
-    new->ip = 0;
     sscanf(buf, "%d.%d.%d.%d/%hhu", 
         &ips[0], &ips[1], &ips[2],
         &ips[3], &new->len);
     if(new->len == 0) for(int i = 0 ; i < 4; i++) if(ips[i] != 0) new->len += 8;
-    for(int i = 0 ; i < 4; i++) new->ip |= (ips[i] << 8*(3-i));
+    for(int i = 0 ; i < 4; i++) ip |= (ips[i] << 8*(3-i));
+    new->ip = ip;
     // Insert to linked list
     head = insert(head, new);
 }
@@ -142,10 +153,9 @@ void segment(int d, Prefix *dis[]){
         if(cur == NULL) break;
         next = cur->next;
     }
-    free(next);
     // remove duplicated data
     Prefix *new = NULL, *tmp = NULL, *dup = NULL;
-    for(int i = 0 ; i < (1<<d)+2 ; i++){
+    /* for(int i = 0 ; i < (1<<d)+2 ; i++){
         new = dis[i];
         while(new != NULL && new->next != NULL){
             tmp = new;
@@ -159,7 +169,7 @@ void segment(int d, Prefix *dis[]){
             }
             new = new->next;
         }
-    }
+    } */
     // sort
     new = NULL, tmp = NULL, dup = NULL;
     unsigned int tmpv;
@@ -181,20 +191,23 @@ void segment(int d, Prefix *dis[]){
 }
 
 void prefix_insert(int d, char buf[20], Prefix *dis[]){
+    if(strcmp(buf, "\n") == 0) return;
     // Something should be fixed here
     int ips[4];
+    unsigned int ip = 0;
     Prefix *new = (Prefix *)malloc(sizeof(Prefix));
-    new->ip = 0;
     sscanf(buf, "%d.%d.%d.%d/%hhu", 
         &ips[0], &ips[1], &ips[2],
         &ips[3], &new->len);
-    if(new->len == 0) for(int i = 0 ; i < 4; i++) if(ips[i] != 0) new->len += 8;
-    for(int i = 0 ; i < 4; i++) new->ip |= (ips[i] << 8*(3-i));
+    // if(new->len == 0) for(int i = 0 ; i < 4; i++) if(ips[i] != 0) new->len += 8;
+    for(int i = 0 ; i < 4; i++) ip |= (ips[i] << 8*(3-i));
+    new->ip = ip;
     if(new->len < d) dis[(1<<d)+1] = insert(dis[(1<<d)+1], new);
     else dis[(new->ip)>>(32-d)] = insert(dis[(new->ip)>>(32-d)], new);
 }
 
 void deleted_prefixes(int d, char buf[20], Prefix *dis[]){
+    if(strcmp(buf, "\n") == 0) return;
     int ips[4];
     unsigned int ip = 0;
     unsigned char len;
@@ -208,33 +221,37 @@ void deleted_prefixes(int d, char buf[20], Prefix *dis[]){
     next = cur->next;
     if(!cur) return;
     while(cur){
-        next = cur->next;
         if(cur->ip == ip && cur->len == len){
-            if(pre) pre->next = next;
-            else if(len < d) dis[(1<<d)+1] = next;
-            else dis[ip>>(32-d)] = next;
+            if(pre == NULL) {
+                if(len < d) dis[(1<<d)+1] = next;
+                else dis[ip>>(32-d)] = next;
+            }
+            else pre->next = next;
             free(cur);
-            return;
-        } else pre = cur;
+            break;
+        }
+        pre = cur;
         cur = next;
+        if(cur == NULL) break;
+        next = cur->next;
     }
 }
+
 void search(int d, char buf[20], Prefix *dis[]){
+    if(strcmp(buf, "\n") == 0) return;
     int ips[4];
-    Prefix *new = (Prefix *)malloc(sizeof(Prefix)), *cur = NULL;
-    new->ip = 0;
+    unsigned int ip = 0;
     sscanf(buf, "%d.%d.%d.%d", &ips[0], &ips[1], &ips[2], &ips[3]);
-    for(int i = 0 ; i < 4; i++) new->ip |= (ips[i] << 8*(3-i));
-    int times = 0;
-    cur = dis[(new->ip)>>(32-d)];
-    while(cur != NULL){
-        if(new->ip == cur->ip){
-            times++; 
+    for(int i = 0 ; i < 4; i++) ip |= (ips[i] << 8*(3-i));
+    int exist = 0;
+    Prefix *cur = dis[ip>>(32-d)];
+    while(cur){
+        if(cur->ip == ip){
+            exist = 1;
             break;
         }
         cur = cur->next;
     }
-    if(times) printf("successful\n");
+    if(exist)printf("successful\n");
     else printf("failed\n");
-    free(new);
 }
