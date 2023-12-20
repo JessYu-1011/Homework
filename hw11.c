@@ -32,11 +32,7 @@ void length_distribution(){
         length_dis[cur->len] += 1;
         cur = cur->next;
     }
-    printf("Length Distribution:\n");
-    for(int i = 0; i < 32 ; i++){
-        printf("Len %2d : %5d ", i, length_dis[i]);
-        if(i%4 == 3) printf("\n");
-    }
+    for(int i = 0; i < 32 ; i++) printf("The number of prefixes with prefix length %d = %d.\n", i, length_dis[i]);
     free(cur);
 }
 
@@ -57,7 +53,7 @@ void input(char buf[20]){
 void segment(int d, Prefix *dis[]){
     Prefix *cur = head, *next = cur->next;
     while(cur != NULL){
-        if(cur->len < d) dis[0] = insert(dis[0], cur);
+        if(cur->len < d) dis[(1<<d)] = insert(dis[1<<d], cur);
         else dis[(cur->ip)>>(32-d)] = insert(dis[(cur->ip)>>(32-d)], cur);
         cur = next;
         if(cur == NULL) break;
@@ -76,7 +72,7 @@ void prefix_insert(int d, char buf[20], Prefix *dis[]){
         &ips[3], &new->len);
     if(new->len == 0) for(int i = 0 ; i < 4; i++) if(ips[i] != 0) new->len += 8;
     for(int i = 0 ; i < 4; i++) new->ip |= (ips[i] << 8*(3-i));
-    if(new->len < d) dis[0] = insert(dis[0], new);
+    if(new->len < d) dis[(1<<d)] = insert(dis[(1<<d)], new);
     else dis[(new->ip)>>(32-d)] = insert(dis[(new->ip)>>(32-d)], new);
 }
 
@@ -89,7 +85,7 @@ void deleted_prefixes(int d, char buf[20], Prefix *dis[]){
         &ips[3], &new->len);
     for(int i = 0 ; i < 4; i++) new->ip |= (ips[i] << 8*(3-i));
     Prefix *cur = NULL, *pre = NULL, *next = NULL;
-    if(new->len < d) cur = dis[0];
+    if(new->len < d) cur = dis[1<<d];
     else cur = dis[(new->ip)>>(32-d)];
     next = cur->next;
     while(cur != NULL){
@@ -109,16 +105,11 @@ void search(int d, char buf[20], Prefix *dis[]){
     new->ip = 0;
     sscanf(buf, "%d.%d.%d.%d", &ips[0], &ips[1], &ips[2], &ips[3]);
     for(int i = 0 ; i < 4; i++) new->ip |= (ips[i] << 8*(3-i));
-    for(int i = 0 ; i < (1<<d); i++){
+    for(int i = 0 ; i < (1<<d)+1; i++){
         cur = dis[i];
         while(cur != NULL){
-            if(new->ip == cur->ip) {
-                
-            }
-            /* printf("Successful IP: %d.%d.%d.%d/%hhu\n", 
-                cur->ip>>24&0xFF, cur->ip>>16&0xFF, 
-                cur->ip>>8&0xFF, cur->ip&0xFF, cur->len); */
-            // else printf("Failed\n");
+            if(new->ip == cur->ip){printf("successful\n"); break;}
+            else printf("failed\n");
             cur = cur->next;
         }
     }
