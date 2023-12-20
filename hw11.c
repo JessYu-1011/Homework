@@ -61,8 +61,8 @@ void segment(int d, Prefix *dis[]){
     }
     free(next);
     // remove duplicated data
-    Prefix *new = NULL, *tmp = NULL, *dup;
-    for(int i = 0 ; i < (1<<d) ; i++){
+    Prefix *new = NULL, *tmp = NULL, *dup = NULL;
+    for(int i = 0 ; i < (1<<d)+2 ; i++){
         new = dis[i];
         while(new != NULL && new->next != NULL){
             tmp = new;
@@ -78,6 +78,7 @@ void segment(int d, Prefix *dis[]){
         }
     }
     // sort
+    new = NULL, tmp = NULL, dup = NULL;
     unsigned int tmpv;
     for(int i = 0 ; i < (1<<d)+2 ; i++){
         new = dis[i];
@@ -111,37 +112,30 @@ void prefix_insert(int d, char buf[20], Prefix *dis[]){
 }
 
 void deleted_prefixes(int d, char buf[20], Prefix *dis[]){
-    int ips[4] = {0};
+    int ips[4];
     unsigned int ip = 0;
-    unsigned char len = 0;
+    unsigned char len;
     sscanf(buf, "%d.%d.%d.%d/%hhu", 
         &ips[0], &ips[1], &ips[2],
         &ips[3], &len);
     for(int i = 0 ; i < 4; i++) ip |= (ips[i] << 8*(3-i));
-    Prefix *cur = NULL, *pre = NULL, *next = NULL;
+    Prefix *cur, *next, *pre = NULL;
     if(len < d) cur = dis[(1<<d)+1];
     else cur = dis[ip>>(32-d)];
     next = cur->next;
-    if(cur != NULL && cur->ip == ip && cur->len == len){
-        free(cur);
-        if(len < d) dis[(1<<d)+1] = next;
-        else dis[ip>>(32-d)] = next;
-        return;
-    }
-    while(cur != NULL){
-        if(cur->ip == ip && cur->len == len){
-            free(cur);
-            cur = next;
-            pre->next = cur;
-            next = cur->next;
-            return;
-        }
-        pre = cur;
-        cur = next;
+    if(!cur) return;
+    while(cur){
         next = cur->next;
+        if(cur->ip == ip && cur->len == len){
+            if(pre) pre->next = next;
+            else if(len < d) dis[(1<<d)+1] = next;
+            else dis[ip>>(32-d)] = next;
+            free(cur);
+            return;
+        } else pre = cur;
+        cur = next;
     }
-} 
-
+}
 void search(int d, char buf[20], Prefix *dis[]){
     int ips[4];
     Prefix *new = (Prefix *)malloc(sizeof(Prefix)), *cur = NULL;
