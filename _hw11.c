@@ -241,12 +241,14 @@ void search(int d, char buf[20], Prefix *dis[]){
     if(strcmp(buf, "\n") == 0) return;
     int ips[4];
     unsigned int ip = 0;
+    unsigned char len = 0;
     sscanf(buf, "%d.%d.%d.%d", &ips[0], &ips[1], &ips[2], &ips[3]);
+    for(int i = 0 ; i < 4 ; i ++) if(ips[i] != 0) len += 8;
     for(int i = 0 ; i < 4; i++) ip |= (ips[i] << 8*(3-i));
     int exist = 0;
     Prefix *cur = dis[ip>>(32-d)];
     while(cur){
-        if(cur->ip == ip){
+        if(cur->ip == ip && cur->len == len){
             exist = 1;
             break;
         }
